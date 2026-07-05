@@ -13,10 +13,10 @@
   <name>ma-core (domain: schemas, hashing, anchoring, verdict engine)</name>
 
   <dependencies>
+    <!-- versions for jackson + junit come from the spring-boot-dependencies BOM (parent pom) -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-      <version>${jackson.version}</version>
     </dependency>
     <!-- RFC 8785 JSON Canonicalization Scheme -->
     <dependency>
@@ -44,7 +44,6 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
-      <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
