@@ -1,0 +1,26 @@
+# --- OS junk ---
+.DS_Store
+Thumbs.db
+
+# --- Java / Maven ---
+target/
+*.class
+hs_err_pid*
+replay_pid*
+*.log
+
+# --- IDEs ---
+# VS Code: keep shared settings, ignore personal state
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+# IntelliJ
+.idea/
+*.iml
+# Eclipse
+.settings/
+.classpath
+.project
+
+# --- App runtime state (append-only evidence store, receipts, session packs) ---
+workdir/
