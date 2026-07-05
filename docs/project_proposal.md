@@ -2,7 +2,7 @@
 
 **Integrity Assurance Framework for Paper-Based Examination Systems**
 
-**Version:** 0.4 Draft
+**Version:** 0.5 Draft
 
 ---
 
@@ -111,6 +111,18 @@ Cryptography cannot prove that a scanned image corresponds to the original physi
 
 MA treats these procedural controls as first-class deployment guidance, because the value of the cryptographic chain depends on how small the pre-registration window is kept.
 
+### Capture clients (web and mobile upload)
+
+Scanning stations are not the only capture path: a deployment may accept uploads from web or mobile clients. The cryptographic chain works identically — but the pre-registration window changes character entirely. A controlled scanning station keeps that window minutes wide under dual-operator supervision; a phone in an uncontrolled party's hands allows a doctored sheet to be photographed, or an image edited before upload, and MA will faithfully anchor the result. Deployments accepting client capture must shrink the window technically:
+
+- capture happens in-app — never through a gallery or file picker,
+- the image is hashed on-device at the moment of capture,
+- the hash is submitted for anchoring immediately (seconds, not hours),
+- the client is backed by platform device attestation (Play Integrity, App Attest),
+- C2PA-capable capture, where available, signs the image at the sensor.
+
+Client capture is a supported path, not a discouraged one — but every manifest records its **capture class** (scanning station or client capture), so a verifier can always distinguish the two and weigh the evidence accordingly.
+
 ### Key custody
 
 A signature made with a key held by the same organization that operates the scanners proves nothing **against that organization** — it could alter an image, re-sign it, and rewrite the manifest. Non-repudiation therefore cannot rest on the operator's signature alone. MA addresses this in two ways:
@@ -209,6 +221,8 @@ Multi-page documents introduce a new omission attack: a page quietly removed mus
 
 Supersession operates on whole documents, never on individual pages: a rescan of any page produces a new document manifest that supersedes the old one. Page-level supersession would make the audit history unmanageable.
 
+Captured images often cannot be processed as-is — a phone photograph must be dewarped and recompressed before OMR software can read it — yet processing must never touch anchored bytes. MA resolves this the same way it resolves everything else: never modify, always append. A **derivation record** registers a processed image as a new artifact carrying its own hash, the hash of the original it derives from, and the transformation identity (tool, version, parameters). The original captured bytes remain the evidence root in all cases; MA does not perform image processing itself, it only records verifiably that processing occurred.
+
 ---
 
 ## Evidence Package
@@ -293,6 +307,7 @@ Stores immutable metadata including:
 - Exam ID
 - Scan timestamp
 - Scanner identifier
+- Capture class (scanning station or client capture) and device attestation evidence, where applicable
 - Ordered page hash list and declared page count
 - Digital signature
 - Supersession reference (if a rescan)
@@ -311,6 +326,8 @@ Two binding profiles cover the two ways examination artifacts are marked:
 - **Automated** (OMR and similar software): the record additionally carries the software identifier and version. The guarantee is **reproducibility** — a verifier can re-run the software on the anchored images and confirm the result.
 - **Attested** (human grading): the record additionally carries the grader identity and rubric version, and is signed by the grader. The result cannot be recomputed from the images; the guarantee is **attribution** — this grader saw exactly this document and committed to this result.
 
+Where processing required a derived image (see *Artifact and Document Model*), the result record references the derived hash, and verification follows the derivation chain back to the anchored original.
+
 Result records are anchored through the same batch mechanism as manifests; a signature alone would leave them rewritable by the operating organization.
 
 ### MA Verifier
@@ -323,6 +340,7 @@ Verifies:
 - Roster completeness (every roster entry has exactly one current, anchored package)
 - Document completeness (all declared pages present, in the declared order)
 - Result-to-image binding (reproducible for the automated profile, attributed for the attested profile)
+- Derivation chain consistency (every processed image chains back to an anchored original)
 - Supersession chain consistency (including supersession-rate anomaly reporting)
 - Timestamp validity
 - Chain of custody
@@ -369,6 +387,7 @@ Project MA aims to provide:
 The project explicitly does **not** attempt to:
 
 - replace OMR software or grading workflows,
+- perform image processing (deskew, dewarp, enhancement) — preparing images for recognition is the OMR vendor's domain; MA only records, via derivation records, that such processing occurred,
 - serve as general-purpose digital-asset notarization — generic content integrity is already well served by C2PA, OpenTimestamps, and public transparency logs; MA's scope is the examination domain, where roster completeness, supersession discipline, receipts, and result binding are the differentiators,
 - prove correspondence between a scanned image and the physical sheet (a procedural matter — see Trust Model),
 - prevent insider attacks entirely,
@@ -395,6 +414,7 @@ External anchoring appears in Phase 1 by design: hashing and signing without an 
 
 - Digital signatures and key management guidance (HSM/smartcard, separation of duties)
 - Result binding, automated profile (OMR), anchored alongside manifests
+- Derivation records (processed images bound to anchored originals)
 - Supersession / rescan workflow (dual authorization, bounded window, anomaly reporting)
 - PDF verification
 
@@ -409,8 +429,9 @@ External anchoring appears in Phase 1 by design: hashing and signing without an 
 ### Phase 4 — Ecosystem
 
 - C2PA manifest interoperability
+- Mobile / web capture clients (in-app capture, on-device hashing, device attestation; C2PA-aligned)
 - Blockchain-optional anchoring
-- Public verification portal (privacy-preserving; salted candidate identifiers only)
+- Public verification portal (privacy-preserving; pseudonymous identifiers only)
 
 ---
 
